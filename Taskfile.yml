@@ -1,0 +1,121 @@
+version: "3"
+
+vars:
+  COMPOSE: docker compose
+
+tasks:
+  setup:
+    desc: Install dependencies, create .env from the example, and run DB migrations
+    cmds:
+      - npm install
+      - 'test -f .env || cp .env.example .env'
+      - task: db:migrate
+      - 'echo "Edit .env with real credentials, then run: task dev"'
+
+  dev:
+    desc: Run the Next.js dev server (http://localhost:3012)
+    cmds:
+      - npm run dev
+
+  dev:stop:
+    desc: Stop the dev server (port + parent process tree) and clear its lock file
+    cmds:
+      - 'pgrep -f "next dev -p 3012" | xargs -r kill -9'
+      - 'lsof -ti :3012 | xargs -r kill -9'
+      - 'rm -f .next/dev/lock'
+      - 'echo "Dev server stopped and lock cleared"'
+
+  build:
+    desc: Build the production bundle
+    cmds:
+      - npm run build
+
+  start:
+    desc: Run the production server (requires build first)
+    cmds:
+      - npm run start
+
+  lint:
+    desc: Run ESLint
+    cmds:
+      - npm run lint
+
+  typecheck:
+    desc: Type-check without emitting
+    cmds:
+      - npx tsc --noEmit
+
+  db:generate:
+    desc: Generate a new Drizzle migration from schema changes
+    cmds:
+      - npm run db:generate
+
+  db:migrate:
+    desc: Apply pending Drizzle migrations to the local SQLite database
+    cmds:
+      - npm run db:migrate
+
+  db:studio:
+    desc: Open Drizzle Studio against the local database
+    cmds:
+      - npm run db:studio
+
+  docker:build:
+    desc: Build the Docker image
+    cmds:
+      - "{{.COMPOSE}} build"
+
+  docker:up:
+    desc: Start the app in Docker (detached)
+    cmds:
+      - "{{.COMPOSE}} up -d"
+
+  docker:down:
+    desc: Stop and remove the Docker containers (volumes are preserved)
+    cmds:
+      - "{{.COMPOSE}} down"
+
+  docker:logs:
+    desc: Tail logs from the running Docker container
+    cmds:
+      - "{{.COMPOSE}} logs -f"
+
+  backup:export:
+    desc: Export the full local instance (SQLite DB + all book files) to a timestamped archive under ./backups
+    cmds:
+      - bash scripts/backup-export.sh
+
+  backup:import:
+    desc: 'Restore a full local instance backup. Usage: task backup:import -- <path-to-archive.tar.gz> [--force]'
+    cmds:
+      - 'bash scripts/backup-restore.sh {{.CLI_ARGS}}'
+
+  docker:backup:export:
+    desc: Export a full backup from the running Docker container to ./backups on the host (requires the container to be up)
+    cmds:
+      - mkdir -p backups
+      - "{{.COMPOSE}} exec mybooks bash scripts/backup-export.sh /backup"
+
+  docker:backup:import:
+    desc: 'Restore a backup into the Docker volumes. Usage: task docker:backup:import -- <filename-in-backups-dir> [--force]. Stop the container first (task docker:down) to avoid restoring into a live database.'
+    cmds:
+      - mkdir -p backups
+      - 'set -- {{.CLI_ARGS}}; {{.COMPOSE}} run --rm mybooks bash scripts/backup-restore.sh "/backup/$1" "$2"'
+
+  release:patch:
+    desc: Bump patch version, commit, and tag locally (does not push)
+    cmds:
+      - 'npm version patch -m "chore(release): v%s"'
+      - 'echo "Tagged $(git describe --tags --abbrev=0). Push with: git push --follow-tags"'
+
+  release:minor:
+    desc: Bump minor version, commit, and tag locally (does not push)
+    cmds:
+      - 'npm version minor -m "chore(release): v%s"'
+      - 'echo "Tagged $(git describe --tags --abbrev=0). Push with: git push --follow-tags"'
+
+  release:major:
+    desc: Bump major version, commit, and tag locally (does not push)
+    cmds:
+      - 'npm version major -m "chore(release): v%s"'
+      - 'echo "Tagged $(git describe --tags --abbrev=0). Push with: git push --follow-tags"'

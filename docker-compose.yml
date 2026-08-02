@@ -1,0 +1,27 @@
+services:
+  mybooks:
+    build: .
+    ports:
+      - "3012:3012"
+    environment:
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+      DATABASE_PATH: /data/db/mybooks.db
+      BOOKS_STORAGE_PATH: /data/books
+    volumes:
+      - mybooks-db:/data/db
+      - mybooks-books:/data/books
+      - ./backups:/backup
+    restart: unless-stopped
+
+volumes:
+  mybooks-db:
+  mybooks-books:
