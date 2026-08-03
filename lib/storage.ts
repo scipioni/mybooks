@@ -10,12 +10,23 @@ export function userDir(userId: string): string {
   return path.join(baseDir(), userId);
 }
 
-export function bookFilePath(userId: string, bookId: string): string {
-  return path.join(userDir(userId), `${bookId}.epub`);
+/**
+ * `filePath`/`coverPath` are stored in the DB relative to `baseDir()`, not as
+ * absolute paths — an absolute path baked in at upload time would go stale
+ * if the app's working directory ever moves (e.g. the deployment is
+ * reinstalled at a different path). Resolve to an absolute path only at the
+ * point of use.
+ */
+export function resolveStoragePath(relativePath: string): string {
+  return path.join(baseDir(), relativePath);
 }
 
-export function bookCoverPath(userId: string, bookId: string, ext: string): string {
-  return path.join(userDir(userId), `${bookId}-cover.${ext}`);
+function relativeBookFilePath(userId: string, bookId: string): string {
+  return path.join(userId, `${bookId}.epub`);
+}
+
+function relativeBookCoverPath(userId: string, bookId: string, ext: string): string {
+  return path.join(userId, `${bookId}-cover.${ext}`);
 }
 
 function ensureUserDir(userId: string): void {
@@ -24,19 +35,23 @@ function ensureUserDir(userId: string): void {
 
 export function saveBookFile(userId: string, bookId: string, buffer: Buffer): string {
   ensureUserDir(userId);
-  const filePath = bookFilePath(userId, bookId);
-  fs.writeFileSync(filePath, buffer);
-  return filePath;
+  const relativePath = relativeBookFilePath(userId, bookId);
+  fs.writeFileSync(resolveStoragePath(relativePath), buffer);
+  return relativePath;
 }
 
 export function saveCoverFile(userId: string, bookId: string, buffer: Buffer, ext: string): string {
   ensureUserDir(userId);
-  const coverPath = bookCoverPath(userId, bookId, ext);
-  fs.writeFileSync(coverPath, buffer);
-  return coverPath;
+  const relativePath = relativeBookCoverPath(userId, bookId, ext);
+  fs.writeFileSync(resolveStoragePath(relativePath), buffer);
+  return relativePath;
 }
 
 export function deleteBookFiles(filePath: string, coverPath: string | null): void {
-  if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  if (coverPath && fs.existsSync(coverPath)) fs.unlinkSync(coverPath);
+  const absFilePath = resolveStoragePath(filePath);
+  if (fs.existsSync(absFilePath)) fs.unlinkSync(absFilePath);
+  if (coverPath) {
+    const absCoverPath = resolveStoragePath(coverPath);
+    if (fs.existsSync(absCoverPath)) fs.unlinkSync(absCoverPath);
+  }
 }

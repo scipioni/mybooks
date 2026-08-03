@@ -7,7 +7,7 @@ import { books, type Book } from "@/lib/db/schema";
 import { ForbiddenError, NotFoundError, handleAuthError, requireUser } from "@/lib/authz";
 import { fetchOpenLibraryDetails } from "@/lib/openlibrary";
 import { fetchGoogleBooksDetails } from "@/lib/googlebooks";
-import { saveCoverFile } from "@/lib/storage";
+import { resolveStoragePath, saveCoverFile } from "@/lib/storage";
 import { embedCoverInEpub } from "@/lib/epubCover";
 
 const applySchema = z.object({ key: z.string().min(1) });
@@ -47,9 +47,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       // just the app's separate cover display. A malformed/unusual EPUB
       // structure shouldn't fail the whole metadata apply.
       try {
-        const epubBuffer = fs.readFileSync(book.filePath);
+        const absFilePath = resolveStoragePath(book.filePath);
+        const epubBuffer = fs.readFileSync(absFilePath);
         const updatedEpub = await embedCoverInEpub(epubBuffer, details.coverBuffer);
-        fs.writeFileSync(book.filePath, updatedEpub);
+        fs.writeFileSync(absFilePath, updatedEpub);
       } catch (err) {
         console.error("Failed to embed cover into EPUB:", err);
       }

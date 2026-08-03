@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import MetadataReviewQueue from "@/components/MetadataReviewQueue";
 
 type UploadStatus = "pending" | "uploading" | "done" | "error";
 
@@ -10,6 +11,12 @@ type QueuedFile = {
   file: File;
   status: UploadStatus;
   error?: string;
+};
+
+type UploadedBook = {
+  id: string;
+  title: string;
+  author: string | null;
 };
 
 function isEpub(file: File): boolean {
@@ -27,6 +34,7 @@ export default function UploadForm() {
   const [queue, setQueue] = useState<QueuedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [reviewBooks, setReviewBooks] = useState<UploadedBook[] | null>(null);
 
   const addFiles = useCallback((fileList: FileList | File[]) => {
     const incoming = Array.from(fileList);
@@ -74,7 +82,7 @@ export default function UploadForm() {
     setQueue((prev) => prev.filter((q) => q.id !== id));
   }
 
-  async function uploadOne(item: QueuedFile) {
+  async function uploadOne(item: QueuedFile): Promise<UploadedBook | null> {
     setQueue((prev) => prev.map((q) => (q.id === item.id ? { ...q, status: "uploading" } : q)));
     try {
       const formData = new FormData();
@@ -87,13 +95,15 @@ export default function UploadForm() {
             q.id === item.id ? { ...q, status: "error", error: data.error ?? "Upload failed" } : q
           )
         );
-        return;
+        return null;
       }
       setQueue((prev) => prev.map((q) => (q.id === item.id ? { ...q, status: "done" } : q)));
+      return { id: data.book.id, title: data.book.title, author: data.book.author };
     } catch {
       setQueue((prev) =>
         prev.map((q) => (q.id === item.id ? { ...q, status: "error", error: "Upload failed" } : q))
       );
+      return null;
     }
   }
 
@@ -101,22 +111,31 @@ export default function UploadForm() {
     const pending = queue.filter((q) => q.status === "pending");
     if (!pending.length) return;
     setUploading(true);
+    const uploaded: UploadedBook[] = [];
     // Small concurrency limit so a big batch doesn't hammer the server at once.
     const concurrency = 3;
     let index = 0;
     async function worker() {
       while (index < pending.length) {
         const item = pending[index++];
-        await uploadOne(item);
+        const book = await uploadOne(item);
+        if (book) uploaded.push(book);
       }
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, pending.length) }, worker));
     setUploading(false);
     router.refresh();
+    if (uploaded.length) setReviewBooks(uploaded);
   }
 
   const hasPending = queue.some((q) => q.status === "pending");
   const hasFinished = queue.some((q) => q.status === "done" || q.status === "error");
+
+  if (reviewBooks) {
+    return (
+      <MetadataReviewQueue books={reviewBooks} onDone={() => setReviewBooks(null)} />
+    );
+  }
 
   return (
     <div className="space-y-3">

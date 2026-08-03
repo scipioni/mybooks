@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { books, devices } from "@/lib/db/schema";
 import { ForbiddenError, NotFoundError, handleAuthError, requireUser } from "@/lib/authz";
 import { sendBookToDevice } from "@/lib/mailer";
+import { resolveStoragePath } from "@/lib/storage";
 
 const sendSchema = z.object({ deviceId: z.string().min(1) });
 
@@ -27,7 +28,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (device.userId !== user.id) throw new ForbiddenError("You do not own this device");
 
     try {
-      await sendBookToDevice({ toEmail: device.email, bookTitle: book.title, filePath: book.filePath });
+      await sendBookToDevice({
+        toEmail: device.email,
+        bookTitle: book.title,
+        filePath: resolveStoragePath(book.filePath),
+      });
     } catch (err) {
       console.error("Failed to send book to device", err);
       return NextResponse.json(
