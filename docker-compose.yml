@@ -17,11 +17,11 @@ services:
       DATABASE_PATH: /data/db/mybooks.db
       BOOKS_STORAGE_PATH: /data/books
     volumes:
-      - mybooks-db:/data/db
-      - mybooks-books:/data/books
+      - ./data/db:/data/db
+      - ./data/books:/data/books
       - ./backups:/backup
     restart: unless-stopped
 
-volumes:
-  mybooks-db:
-  mybooks-books:
+#volumes:
+#  mybooks-db:
+#  mybooks-books:

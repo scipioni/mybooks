@@ -80,6 +80,17 @@ tasks:
     cmds:
       - "{{.COMPOSE}} logs -f"
 
+  docker:publish:
+    desc: Build and push the Docker image to scipioit/mybooks, tagged with the latest git tag and "latest"
+    vars:
+      TAG:
+        sh: git describe --tags --abbrev=0
+    cmds:
+      - docker build -t scipioit/mybooks:{{.TAG}} -t scipioit/mybooks:latest .
+      - docker push scipioit/mybooks:{{.TAG}}
+      - docker push scipioit/mybooks:latest
+      - 'echo "Published scipioit/mybooks:{{.TAG}} and scipioit/mybooks:latest"'
+
   backup:export:
     desc: Export the full local instance (SQLite DB + all book files) to a timestamped archive under ./backups
     cmds:
