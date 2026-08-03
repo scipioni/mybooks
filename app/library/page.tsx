@@ -6,8 +6,13 @@ import { books } from "@/lib/db/schema";
 import UploadForm from "@/components/UploadForm";
 import LibraryFilters from "@/components/LibraryFilters";
 import LibraryGrid from "@/components/LibraryGrid";
+import LibraryPagination from "@/components/LibraryPagination";
+import LibrarySelectionProvider from "@/components/LibrarySelectionContext";
 import { isMetadataIncomplete } from "@/lib/bookMetadata";
 import { getAverageRatingsByIsbn } from "@/lib/reviews";
+import { getExternalBookLink } from "@/lib/externalBookLink";
+
+const PAGE_SIZE = 24;
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -67,6 +72,12 @@ export default async function LibraryPage({ searchParams }: Props) {
     rows = rows.filter(isMetadataIncomplete);
   }
 
+  const totalCount = rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const requestedPage = typeof sp.page === "string" ? Number(sp.page) : 1;
+  const page = Number.isFinite(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
+  rows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const isbns = rows.map((b) => b.isbn).filter((isbn): isbn is string => Boolean(isbn));
   const avgRatings = getAverageRatingsByIsbn(isbns);
 
@@ -75,22 +86,36 @@ export default async function LibraryPage({ searchParams }: Props) {
       <div className="mb-6">
         <UploadForm />
       </div>
-      <LibraryFilters />
-      {rows.length === 0 ? (
-        <p className="text-sm text-zinc-500">No books yet — upload an EPUB to get started.</p>
-      ) : (
-        <LibraryGrid
-          books={rows.map((b) => ({
-            id: b.id,
-            title: b.title,
-            author: b.author,
-            rating: b.rating,
-            avgRating: b.isbn ? (avgRatings.get(b.isbn)?.avgRating ?? null) : null,
-            updatedAt: b.updatedAt,
-            incomplete: isMetadataIncomplete(b),
-          }))}
-        />
-      )}
+      <LibrarySelectionProvider>
+        <LibraryFilters />
+        {totalCount === 0 ? (
+          <p className="text-sm text-zinc-500">No books yet — upload an EPUB to get started.</p>
+        ) : (
+          <>
+            <LibraryGrid
+              books={rows.map((b) => ({
+                id: b.id,
+                title: b.title,
+                author: b.author,
+                rating: b.rating,
+                avgRating: b.isbn ? (avgRatings.get(b.isbn)?.avgRating ?? null) : null,
+                updatedAt: b.updatedAt,
+                incomplete: isMetadataIncomplete(b),
+                hasExternalLink: Boolean(getExternalBookLink(b) || b.isbn),
+                readingStatus: b.readingStatus,
+                tags: (() => {
+                  try {
+                    return JSON.parse(b.tags || "[]") as string[];
+                  } catch {
+                    return [];
+                  }
+                })(),
+              }))}
+            />
+            <LibraryPagination page={page} totalPages={totalPages} />
+          </>
+        )}
+      </LibrarySelectionProvider>
     </div>
   );
 }

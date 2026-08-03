@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useLibrarySelection } from "@/components/LibrarySelectionContext";
 
 function Icon({ path, className = "h-4 w-4" }: { path: string; className?: string }) {
   return (
@@ -62,6 +63,7 @@ export default function LibraryFilters() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { selected, clear, startReview } = useLibrarySelection();
 
   const [q, setQ] = useState(searchParams.get("q") ?? "");
   const [tag, setTag] = useState(searchParams.get("tag") ?? "");
@@ -89,6 +91,7 @@ export default function LibraryFilters() {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 
@@ -99,6 +102,7 @@ export default function LibraryFilters() {
     else params.delete("q");
     if (tag) params.set("tag", tag);
     else params.delete("tag");
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 
@@ -176,6 +180,22 @@ export default function LibraryFilters() {
           <Icon path={ICONS.close} className="h-3.5 w-3.5" />
           Clear
         </button>
+      )}
+
+      {selected.size > 0 && (
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-sm text-zinc-600">{selected.size} selected</span>
+          <button
+            type="button"
+            onClick={startReview}
+            className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+          >
+            Normalize metadata
+          </button>
+          <button type="button" onClick={clear} className="text-sm text-zinc-500 hover:text-zinc-800">
+            Clear selection
+          </button>
+        </div>
       )}
     </form>
   );

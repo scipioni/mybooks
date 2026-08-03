@@ -47,6 +47,7 @@ export const books = sqliteTable("books", {
   coverPath: text("cover_path"),
   filePath: text("file_path").notNull(),
   openLibraryId: text("open_library_id"),
+  googleBooksLink: text("google_books_link"),
   language: text("language"),
   isbn: text("isbn"),
   publicationYear: integer("publication_year"),

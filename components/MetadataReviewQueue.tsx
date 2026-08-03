@@ -25,6 +25,7 @@ export default function MetadataReviewQueue({
   const [loading, setLoading] = useState(false);
   const [applyingKey, setApplyingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [skipCover, setSkipCover] = useState(false);
 
   async function searchCurrent(book: BookSummary) {
     setLoading(true);
@@ -76,7 +77,7 @@ export default function MetadataReviewQueue({
       const res = await fetch(`/api/books/${book.id}/openlibrary/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key }),
+        body: JSON.stringify({ key, skipCover }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -103,6 +104,14 @@ export default function MetadataReviewQueue({
           Stop
         </button>
       </div>
+      <label className="mb-3 flex items-center gap-2 text-xs text-zinc-600">
+        <input
+          type="checkbox"
+          checked={skipCover}
+          onChange={(e) => setSkipCover(e.target.checked)}
+        />
+        Skip cover image replacement
+      </label>
       {error && <p className="mb-2 text-sm text-red-700">{error}</p>}
       {loading && <p className="text-sm text-zinc-500">Searching…</p>}
       {!loading && candidates && candidates.length === 0 && (

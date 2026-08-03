@@ -4,14 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Book } from "@/lib/db/schema";
 import StarRatingInput from "@/components/StarRatingInput";
+import TagInput from "@/components/TagInput";
 
 export default function EditBookForm({ book }: { book: Book }) {
   const router = useRouter();
   const initialTags = (() => {
     try {
-      return (JSON.parse(book.tags || "[]") as string[]).join(", ");
+      return JSON.parse(book.tags || "[]") as string[];
     } catch {
-      return "";
+      return [];
     }
   })();
 
@@ -31,13 +32,11 @@ export default function EditBookForm({ book }: { book: Book }) {
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    setSaved(false);
     try {
       const res = await fetch(`/api/books/${book.id}`, {
         method: "PATCH",
@@ -47,10 +46,7 @@ export default function EditBookForm({ book }: { book: Book }) {
           author: author || null,
           seriesName: seriesName || null,
           seriesPosition: seriesPosition ? Number(seriesPosition) : null,
-          tags: tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
+          tags,
           readingStatus,
           rating,
           language: language.trim() || null,
@@ -63,8 +59,7 @@ export default function EditBookForm({ book }: { book: Book }) {
         setError(typeof data.error === "string" ? data.error : "Failed to save changes");
         return;
       }
-      setSaved(true);
-      router.refresh();
+      router.push("/library");
     } catch {
       setError("Failed to save changes");
     } finally {
@@ -110,12 +105,8 @@ export default function EditBookForm({ book }: { book: Book }) {
           />
         </label>
         <label className="col-span-2 text-sm">
-          Tags (comma-separated)
-          <input
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-          />
+          Tags
+          <TagInput value={tags} onChange={setTags} />
         </label>
         <label className="text-sm">
           Reading status
@@ -167,7 +158,6 @@ export default function EditBookForm({ book }: { book: Book }) {
         >
           {saving ? "Saving..." : "Save changes"}
         </button>
-        {saved && <span className="text-sm text-green-700">Saved</span>}
         {error && <span className="text-sm text-red-700">{error}</span>}
       </div>
     </form>

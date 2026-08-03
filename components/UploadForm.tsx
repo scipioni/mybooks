@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MetadataReviewQueue from "@/components/MetadataReviewQueue";
 
@@ -35,6 +35,22 @@ export default function UploadForm() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [reviewBooks, setReviewBooks] = useState<UploadedBook[] | null>(null);
+
+  // Without this, dropping a file even slightly outside the dashed drop
+  // zone below (e.g. onto the library grid, or the gap between elements)
+  // makes the browser navigate the whole tab to open the file directly,
+  // instead of the drop zone's own onDrop handling it.
+  useEffect(() => {
+    function preventDefault(e: DragEvent) {
+      e.preventDefault();
+    }
+    window.addEventListener("dragover", preventDefault);
+    window.addEventListener("drop", preventDefault);
+    return () => {
+      window.removeEventListener("dragover", preventDefault);
+      window.removeEventListener("drop", preventDefault);
+    };
+  }, []);
 
   const addFiles = useCallback((fileList: FileList | File[]) => {
     const incoming = Array.from(fileList);

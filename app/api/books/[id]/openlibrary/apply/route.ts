@@ -10,7 +10,7 @@ import { fetchGoogleBooksDetails } from "@/lib/googlebooks";
 import { resolveStoragePath, saveCoverFile } from "@/lib/storage";
 import { embedCoverInEpub } from "@/lib/epubCover";
 
-const applySchema = z.object({ key: z.string().min(1) });
+const applySchema = z.object({ key: z.string().min(1), skipCover: z.boolean().optional() });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -40,7 +40,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (details.language) update.language = details.language;
     if (details.isbn) update.isbn = details.isbn;
     if (details.publicationYear) update.publicationYear = details.publicationYear;
-    if (details.coverBuffer && details.coverExt) {
+    if (!parsed.data.skipCover && details.coverBuffer && details.coverExt) {
       update.coverPath = saveCoverFile(user.id, id, details.coverBuffer, details.coverExt);
 
       // Best-effort: also embed the new cover into the EPUB file itself, not

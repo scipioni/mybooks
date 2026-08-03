@@ -25,6 +25,7 @@ export default function OpenLibrarySearch({
   const [searchedByIsbn, setSearchedByIsbn] = useState(false);
   const [applyingKey, setApplyingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [skipCover, setSkipCover] = useState(false);
 
   async function runSearch(url: string, byIsbn: boolean) {
     setSearching(true);
@@ -67,7 +68,7 @@ export default function OpenLibrarySearch({
       const res = await fetch(`/api/books/${bookId}/openlibrary/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key }),
+        body: JSON.stringify({ key, skipCover }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -140,6 +141,14 @@ export default function OpenLibrarySearch({
           Search by ISBN ({isbn}) — exact match
         </button>
       )}
+      <label className="mb-3 flex items-center gap-2 text-xs text-zinc-600">
+        <input
+          type="checkbox"
+          checked={skipCover}
+          onChange={(e) => setSkipCover(e.target.checked)}
+        />
+        Skip cover image replacement
+      </label>
       {error && <p className="mb-2 text-sm text-red-700">{error}</p>}
       {(sourceErrors.google || sourceErrors.openLibrary) && (
         <p className="mb-2 text-xs text-amber-700">

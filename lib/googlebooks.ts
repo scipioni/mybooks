@@ -117,6 +117,23 @@ export async function fetchGoogleBooksDetails(key: string): Promise<OpenLibraryD
   };
 }
 
+/**
+ * Resolves a book's canonical Google Books listing link by exact-edition
+ * ISBN lookup (distinct from the free-text searchGoogleBooks above).
+ */
+export async function resolveGoogleBooksLinkByIsbn(isbn: string): Promise<string | null> {
+  const url = withApiKey(new URL(GOOGLE_BOOKS_API));
+  url.searchParams.set("q", `isbn:${isbn}`);
+  url.searchParams.set("maxResults", "1");
+
+  const res = await fetchWithRetry(url.toString());
+  if (!res.ok) return null;
+
+  const data = (await res.json()) as { items?: GBVolume[] };
+  const v = data.items?.[0]?.volumeInfo ?? {};
+  return v.canonicalVolumeLink ?? v.infoLink ?? null;
+}
+
 function normalizeThumbnail(url: string | undefined, width: number): string | null {
   if (!url) return null;
   // Google Books returns http:// thumbnail URLs; force https to avoid

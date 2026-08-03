@@ -6,6 +6,7 @@ import { books } from "@/lib/db/schema";
 import { handleAuthError, requireUser } from "@/lib/authz";
 import { isValidEpub, parseEpub } from "@/lib/epub";
 import { saveBookFile, saveCoverFile } from "@/lib/storage";
+import { resolveGoogleBooksLinkByIsbn } from "@/lib/googlebooks";
 
 export async function GET(req: Request) {
   try {
@@ -104,6 +105,7 @@ export async function POST(req: Request) {
       coverPath,
       filePath,
       openLibraryId: null,
+      googleBooksLink: null as string | null,
       language: metadata.language,
       isbn: metadata.isbn,
       publicationYear: null,
@@ -111,6 +113,22 @@ export async function POST(req: Request) {
       updatedAt: new Date(),
     };
     db.insert(books).values(book).run();
+
+    // Best-effort: an ISBN from the EPUB lets us resolve and cache a Google
+    // Books link now, before any metadata review happens (which may set a
+    // higher-priority Open Library/Google link, or may never happen at all).
+    // A failure here shouldn't fail the upload itself.
+    if (book.isbn) {
+      try {
+        const link = await resolveGoogleBooksLinkByIsbn(book.isbn);
+        if (link) {
+          db.update(books).set({ googleBooksLink: link }).where(eq(books.id, bookId)).run();
+          book.googleBooksLink = link;
+        }
+      } catch (err) {
+        console.error("Failed to resolve Google Books link at upload time:", err);
+      }
+    }
 
     return NextResponse.json({ book }, { status: 201 });
   } catch (err) {
