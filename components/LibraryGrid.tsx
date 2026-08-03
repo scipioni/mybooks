@@ -11,6 +11,7 @@ interface BookCard {
   title: string;
   author: string | null;
   rating: number | null;
+  avgRating: number | null;
   updatedAt: Date;
   incomplete: boolean;
 }
@@ -113,8 +114,13 @@ export default function LibraryGrid({ books }: { books: BookCard[] }) {
                   {book.author}
                 </span>
               )}
-              <div className="mt-1">
-                <StarRating rating={book.rating} />
+              <div className="mt-1 flex items-center gap-1">
+                <StarRating rating={book.avgRating != null ? Math.round(book.avgRating) : book.rating} />
+                {book.avgRating != null && (
+                  <span className="text-[10px] text-zinc-400" title="Average across all reviews for this ISBN">
+                    {book.avgRating.toFixed(1)}
+                  </span>
+                )}
               </div>
             </Link>
           );

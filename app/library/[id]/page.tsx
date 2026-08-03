@@ -9,6 +9,8 @@ import OpenLibrarySearch from "@/components/OpenLibrarySearch";
 import SendToDeviceButton from "@/components/SendToDeviceButton";
 import DeleteBookButton from "@/components/DeleteBookButton";
 import StarRating from "@/components/StarRating";
+import ReviewSection from "@/components/ReviewSection";
+import { getAverageRatingsByIsbn } from "@/lib/reviews";
 
 export default async function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -26,6 +28,8 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
     .where(eq(devices.userId, session.user.id))
     .orderBy(desc(devices.createdAt))
     .all();
+
+  const avgRating = book.isbn ? (getAverageRatingsByIsbn([book.isbn]).get(book.isbn)?.avgRating ?? null) : null;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -65,8 +69,13 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
                 .join(" · ")}
             </p>
           )}
-          <div className="mt-2">
-            <StarRating rating={book.rating} size="md" />
+          <div className="mt-2 flex items-center gap-2">
+            <StarRating rating={avgRating != null ? Math.round(avgRating) : book.rating} size="md" />
+            {avgRating != null && (
+              <span className="text-xs text-zinc-400" title="Average across all reviews for this ISBN">
+                {avgRating.toFixed(1)} avg
+              </span>
+            )}
           </div>
           <div className="mt-4">
             <DeleteBookButton bookId={book.id} />
@@ -87,6 +96,11 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
           isbn={book.isbn}
           defaultLanguage={book.language}
         />
+      </section>
+
+      <section className="mb-6">
+        <h2 className="mb-2 text-lg font-medium">Reviews</h2>
+        <ReviewSection bookId={book.id} isbn={book.isbn} />
       </section>
 
       <section>

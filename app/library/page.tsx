@@ -7,6 +7,7 @@ import UploadForm from "@/components/UploadForm";
 import LibraryFilters from "@/components/LibraryFilters";
 import LibraryGrid from "@/components/LibraryGrid";
 import { isMetadataIncomplete } from "@/lib/bookMetadata";
+import { getAverageRatingsByIsbn } from "@/lib/reviews";
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -66,6 +67,9 @@ export default async function LibraryPage({ searchParams }: Props) {
     rows = rows.filter(isMetadataIncomplete);
   }
 
+  const isbns = rows.map((b) => b.isbn).filter((isbn): isbn is string => Boolean(isbn));
+  const avgRatings = getAverageRatingsByIsbn(isbns);
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-6">
@@ -81,6 +85,7 @@ export default async function LibraryPage({ searchParams }: Props) {
             title: b.title,
             author: b.author,
             rating: b.rating,
+            avgRating: b.isbn ? (avgRatings.get(b.isbn)?.avgRating ?? null) : null,
             updatedAt: b.updatedAt,
             incomplete: isMetadataIncomplete(b),
           }))}

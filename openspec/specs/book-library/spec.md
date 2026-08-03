@@ -119,15 +119,19 @@ The system SHALL visually indicate, on the library dashboard, any book missing a
 - **THEN** the system shows only books missing at least one of those fields
 
 ### Requirement: Books display a star rating and can be filtered by minimum rating
-The system SHALL render a book's rating as a star indicator on both the dashboard and detail view, and SHALL let a user filter the dashboard to books at or above a chosen minimum rating.
+The system SHALL render a book's star indicator on both the dashboard and detail view as the mean rating of all reviews for that book's ISBN, when at least one review exists for that ISBN. When no review exists yet for that ISBN, the system SHALL fall back to rendering the viewing user's own per-book rating, as before. The minimum-rating filter on the dashboard SHALL continue to filter using the viewing user's own per-book rating, independent of any review-based display change.
 
-#### Scenario: Book has a rating
-- **WHEN** a user views a book with a rating set
-- **THEN** the system displays that rating as filled/unfilled stars
+#### Scenario: Book has reviews for its ISBN
+- **WHEN** a user views a book whose ISBN has one or more reviews
+- **THEN** the system displays the mean of those reviews' ratings as filled/unfilled stars, regardless of the viewing user's own rating for that book
+
+#### Scenario: Book has no reviews for its ISBN
+- **WHEN** a user views a book whose ISBN has no reviews (or has no ISBN)
+- **THEN** the system displays the viewing user's own rating for that book as filled/unfilled stars, as before
 
 #### Scenario: User filters by minimum rating
 - **WHEN** a user selects a minimum rating filter
-- **THEN** the system shows only books with a rating at or above that value, excluding unrated books
+- **THEN** the system shows only books whose viewing user's own rating is at or above that value, excluding unrated books, unaffected by any review-based display change
 
 ### Requirement: Clicking a book's author filters the dashboard to that author
 The system SHALL let a user click a book's author on the dashboard to filter the library to books matching that author, without navigating to the book's detail view.

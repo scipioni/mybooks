@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -54,7 +54,34 @@ export const books = sqliteTable("books", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 
+export const reviews = sqliteTable(
+  "reviews",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    // Provenance only (which of the reviewer's own book rows this was
+    // written against) — grouping/uniqueness is by isbn, not bookId, since
+    // the whole point is showing the same review across different owners'
+    // rows for the same ISBN.
+    bookId: text("book_id")
+      .notNull()
+      .references(() => books.id),
+    // Snapshotted from the book's isbn at creation time, not live-joined —
+    // if the book is later re-normalized to a different ISBN, this review
+    // intentionally keeps its original grouping.
+    isbn: text("isbn").notNull(),
+    rating: integer("rating").notNull(),
+    body: text("body").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [unique().on(table.userId, table.isbn)]
+);
+
 export type User = typeof users.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type Device = typeof devices.$inferSelect;
 export type Book = typeof books.$inferSelect;
+export type Review = typeof reviews.$inferSelect;
