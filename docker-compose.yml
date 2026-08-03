@@ -14,6 +14,7 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_FROM: ${SMTP_FROM}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY}
       DATABASE_PATH: /data/db/mybooks.db
       BOOKS_STORAGE_PATH: /data/books
     volumes:
