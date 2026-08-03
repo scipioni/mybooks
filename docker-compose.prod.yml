@@ -1,0 +1,18 @@
+services:
+  mybooks:
+    image: scipioit/mybooks:${MYBOOKS_TAG:-latest}
+    env_file:
+      - .env
+    environment:
+      # Overrides whatever DATABASE_PATH/BOOKS_STORAGE_PATH are set to in
+      # .env (typically local dev paths) with the in-container paths that
+      # match the volumes mounted below.
+      DATABASE_PATH: /data/db/mybooks.db
+      BOOKS_STORAGE_PATH: /data/books
+    ports:
+      - "3012:3012"
+    volumes:
+      - ./data/db:/data/db
+      - ./data/books:/data/books
+      - ./backups:/backup
+    restart: unless-stopped

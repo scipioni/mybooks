@@ -2,6 +2,7 @@ version: "3"
 
 vars:
   COMPOSE: docker compose
+  PROD_COMPOSE: docker compose -f docker-compose.prod.yml
 
 tasks:
   setup:
@@ -79,6 +80,26 @@ tasks:
     desc: Tail logs from the running Docker container
     cmds:
       - "{{.COMPOSE}} logs -f"
+
+  docker:prod:pull:
+    desc: Pull the published image referenced by docker-compose.prod.yml (scipioit/mybooks, tag from $MYBOOKS_TAG or "latest")
+    cmds:
+      - "{{.PROD_COMPOSE}} pull"
+
+  docker:prod:up:
+    desc: Start the app in Docker using the published image and .env (production; no local build)
+    cmds:
+      - "{{.PROD_COMPOSE}} up -d"
+
+  docker:prod:down:
+    desc: Stop and remove the production Docker containers (volumes are preserved)
+    cmds:
+      - "{{.PROD_COMPOSE}} down"
+
+  docker:prod:logs:
+    desc: Tail logs from the running production Docker container
+    cmds:
+      - "{{.PROD_COMPOSE}} logs -f"
 
   docker:publish:
     desc: Build and push the Docker image to scipioit/mybooks, tagged with the latest git tag and "latest"
