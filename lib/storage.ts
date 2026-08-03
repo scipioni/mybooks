@@ -42,6 +42,15 @@ export function saveBookFile(userId: string, bookId: string, buffer: Buffer): st
 
 export function saveCoverFile(userId: string, bookId: string, buffer: Buffer, ext: string): string {
   ensureUserDir(userId);
+  // Remove any previously saved cover for this book under a different
+  // extension (e.g. the EPUB's own cover was .jpeg, then a normalized
+  // metadata apply saved a .jpg) so it doesn't linger as an orphan file.
+  const dir = userDir(userId);
+  for (const entry of fs.readdirSync(dir)) {
+    if (entry.startsWith(`${bookId}-cover.`) && entry !== `${bookId}-cover.${ext}`) {
+      fs.unlinkSync(path.join(dir, entry));
+    }
+  }
   const relativePath = relativeBookCoverPath(userId, bookId, ext);
   fs.writeFileSync(resolveStoragePath(relativePath), buffer);
   return relativePath;
