@@ -26,7 +26,7 @@ export default function InviteForm() {
         setError(data.error ?? "Failed to create invite");
         return;
       }
-      setMessage(`Invite sent to ${email}`);
+      setMessage(data.warning ?? `Invite sent to ${email}`);
       setEmail("");
       router.refresh();
     } catch {

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { invites, users } from "@/lib/db/schema";
 import { handleAuthError, requireAdmin } from "@/lib/authz";
+import { sendInviteEmail } from "@/lib/mailer";
 
 export async function GET() {
   try {
@@ -56,6 +57,25 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     };
     db.insert(invites).values(invite).run();
+
+    try {
+      const info = await sendInviteEmail({ toEmail: email });
+      console.log("Sent invite email", {
+        inviteId: invite.id,
+        messageId: info.messageId,
+        response: info.response,
+      });
+    } catch (err) {
+      console.error("Failed to send invite email", err);
+      return NextResponse.json(
+        {
+          invite,
+          warning: "Invite created, but the email failed to send. Please check SMTP configuration.",
+        },
+        { status: 201 }
+      );
+    }
+
     return NextResponse.json({ invite }, { status: 201 });
   } catch (err) {
     return handleAuthError(err);
