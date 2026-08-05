@@ -28,10 +28,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (device.userId !== user.id) throw new ForbiddenError("You do not own this device");
 
     try {
-      await sendBookToDevice({
+      const info = await sendBookToDevice({
         toEmail: device.email,
         bookTitle: book.title,
         filePath: resolveStoragePath(book.filePath),
+      });
+      console.log("Sent book to device", {
+        bookId: book.id,
+        deviceId: device.id,
+        messageId: info.messageId,
+        response: info.response,
       });
     } catch (err) {
       console.error("Failed to send book to device", err);

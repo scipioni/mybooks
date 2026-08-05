@@ -1,11 +1,11 @@
-import nodemailer from "nodemailer";
+import nodemailer, { type SentMessageInfo } from "nodemailer";
 import { env, requireEnv } from "@/lib/env";
 
 export async function sendBookToDevice(opts: {
   toEmail: string;
   bookTitle: string;
   filePath: string;
-}): Promise<void> {
+}): Promise<SentMessageInfo> {
   requireEnv(["SMTP_HOST", "SMTP_FROM"]);
 
   const port = Number(env.SMTP_PORT) || 587;
@@ -16,7 +16,7 @@ export async function sendBookToDevice(opts: {
     auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } : undefined,
   });
 
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: env.SMTP_FROM,
     to: opts.toEmail,
     subject: opts.bookTitle,
@@ -28,6 +28,8 @@ export async function sendBookToDevice(opts: {
       },
     ],
   });
+
+  return info;
 }
 
 function sanitizeFilename(name: string): string {
