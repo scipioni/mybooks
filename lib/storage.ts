@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import sharp from "sharp";
 import { env } from "@/lib/env";
+
+const THUMBNAIL_WIDTH = 300;
+const THUMBNAIL_HEIGHT = 450;
 
 function baseDir(): string {
   return path.resolve(process.cwd(), env.BOOKS_STORAGE_PATH || "./data/books");
@@ -62,5 +66,34 @@ export function deleteBookFiles(filePath: string, coverPath: string | null): voi
   if (coverPath) {
     const absCoverPath = resolveStoragePath(coverPath);
     if (fs.existsSync(absCoverPath)) fs.unlinkSync(absCoverPath);
+    const absThumbPath = thumbnailPathFor(absCoverPath);
+    if (fs.existsSync(absThumbPath)) fs.unlinkSync(absThumbPath);
   }
+}
+
+function thumbnailPathFor(absCoverPath: string): string {
+  const dir = path.dirname(absCoverPath);
+  const ext = path.extname(absCoverPath);
+  const base = path.basename(absCoverPath, ext);
+  // Thumbnails are always re-encoded as JPEG regardless of the original format.
+  return path.join(dir, `${base}-thumb.jpg`);
+}
+
+/**
+ * Returns the absolute path to a resized (300x450) version of the cover at
+ * `absCoverPath`, generating and caching it to disk on first call. Reused on
+ * subsequent calls so resizing only happens once per cover.
+ */
+export async function getOrCreateCoverThumbnail(absCoverPath: string): Promise<string> {
+  const absThumbPath = thumbnailPathFor(absCoverPath);
+  if (fs.existsSync(absThumbPath)) {
+    const [coverStat, thumbStat] = [fs.statSync(absCoverPath), fs.statSync(absThumbPath)];
+    if (thumbStat.mtimeMs >= coverStat.mtimeMs) return absThumbPath;
+  }
+  const buffer = await sharp(absCoverPath)
+    .resize(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, { fit: "cover" })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+  fs.writeFileSync(absThumbPath, buffer);
+  return absThumbPath;
 }

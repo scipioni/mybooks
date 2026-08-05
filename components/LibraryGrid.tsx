@@ -84,7 +84,7 @@ export default function LibraryGrid({ books }: { books: BookCard[] }) {
                 )}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`/api/books/${book.id}/cover?v=${book.updatedAt.getTime()}`}
+                  src={`/api/books/${book.id}/cover?v=${book.updatedAt.getTime()}&size=thumb`}
                   alt={book.title}
                   className={`aspect-[2/3] w-full rounded-md border object-cover ${
                     isSelected ? "border-zinc-900 ring-2 ring-zinc-900" : "border-zinc-200 bg-white"

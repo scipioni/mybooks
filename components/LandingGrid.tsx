@@ -12,7 +12,7 @@ export default function LandingGrid({ books }: { books: LandingBook[] }) {
         <div key={book.id}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={`/api/public/admin-books/${book.id}/cover?v=${book.updatedAt.getTime()}`}
+            src={`/api/public/admin-books/${book.id}/cover?v=${book.updatedAt.getTime()}&size=thumb`}
             alt={book.title}
             className="aspect-[2/3] w-full rounded-md border border-zinc-200 bg-white object-cover"
           />
