@@ -3,22 +3,16 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { books, reviews } from "@/lib/db/schema";
-import { ForbiddenError, NotFoundError, handleAuthError, requireUser } from "@/lib/authz";
+import { reviews } from "@/lib/db/schema";
+import { handleAuthError, requireUser } from "@/lib/authz";
+import { getBookOrThrow } from "@/lib/books";
 import { getReviewsForIsbn } from "@/lib/reviews";
-
-async function getOwnedBook(userId: string, id: string) {
-  const book = db.select().from(books).where(eq(books.id, id)).get();
-  if (!book) throw new NotFoundError("Book not found");
-  if (book.ownerId !== userId) throw new ForbiddenError("You do not own this book");
-  return book;
-}
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser();
     const { id } = await params;
-    const book = await getOwnedBook(user.id, id);
+    const book = getBookOrThrow(id);
 
     if (!book.isbn) {
       return NextResponse.json({ isbn: null, reviews: [], myReview: null });
@@ -42,7 +36,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     const user = await requireUser();
     const { id } = await params;
-    const book = await getOwnedBook(user.id, id);
+    const book = getBookOrThrow(id);
 
     if (!book.isbn) {
       return NextResponse.json(
@@ -96,7 +90,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   try {
     const user = await requireUser();
     const { id } = await params;
-    const book = await getOwnedBook(user.id, id);
+    const book = getBookOrThrow(id);
 
     if (!book.isbn) {
       return NextResponse.json({ ok: true });

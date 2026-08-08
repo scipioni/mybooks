@@ -29,14 +29,14 @@ The system SHALL require the user to explicitly review and confirm a candidate m
 - **THEN** the book's existing metadata remains unchanged
 
 ### Requirement: Metadata lookup and review is optional at every point
-The system SHALL let a user skip the Open Library lookup entirely during upload, and SHALL let a user trigger it later on demand for any book they own.
+The system SHALL let a user skip the Open Library lookup entirely during upload, and SHALL let a user trigger it later on demand for any book in the shared library.
 
 #### Scenario: User skips lookup during upload
 - **WHEN** a user finishes uploading a book without invoking Open Library search
 - **THEN** the book is saved using only the metadata extracted from the EPUB itself
 
 #### Scenario: User invokes lookup later
-- **WHEN** a user opens an existing book they own and triggers an Open Library search
+- **WHEN** a user opens an existing book and triggers an Open Library search
 - **THEN** the system performs the search and presents candidates for review as usual
 
 ### Requirement: Confirmed metadata records its Open Library source

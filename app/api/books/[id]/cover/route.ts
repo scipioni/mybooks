@@ -8,12 +8,12 @@ import { getOrCreateCoverThumbnail, resolveStoragePath } from "@/lib/storage";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    await requireUser();
     const { id } = await params;
     const book = db.select().from(books).where(eq(books.id, id)).get();
     const absCoverPath = book?.coverPath ? resolveStoragePath(book.coverPath) : null;
 
-    if (!book || book.ownerId !== user.id || !absCoverPath || !fs.existsSync(absCoverPath)) {
+    if (!book || !absCoverPath || !fs.existsSync(absCoverPath)) {
       return NextResponse.redirect(new URL("/placeholder-cover.svg", req.url));
     }
 

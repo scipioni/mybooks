@@ -3,21 +3,15 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { books, type Book } from "@/lib/db/schema";
-import { ForbiddenError, NotFoundError, handleAuthError, requireUser } from "@/lib/authz";
+import { ForbiddenError, handleAuthError, requireUser } from "@/lib/authz";
+import { getBookOrThrow } from "@/lib/books";
 import { deleteBookFiles } from "@/lib/storage";
-
-async function getOwnedBook(userId: string, id: string): Promise<Book> {
-  const book = db.select().from(books).where(eq(books.id, id)).get();
-  if (!book) throw new NotFoundError("Book not found");
-  if (book.ownerId !== userId) throw new ForbiddenError("You do not own this book");
-  return book;
-}
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    await requireUser();
     const { id } = await params;
-    const book = await getOwnedBook(user.id, id);
+    const book = getBookOrThrow(id);
     return NextResponse.json({ book });
   } catch (err) {
     return handleAuthError(err);
@@ -39,9 +33,9 @@ const patchSchema = z.object({
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    await requireUser();
     const { id } = await params;
-    await getOwnedBook(user.id, id);
+    getBookOrThrow(id);
 
     const body = await req.json().catch(() => null);
     const parsed = patchSchema.safeParse(body);
@@ -65,7 +59,13 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   try {
     const user = await requireUser();
     const { id } = await params;
-    const book = await getOwnedBook(user.id, id);
+    const book = getBookOrThrow(id);
+    // Deletion is the one destructive, irreversible action on a shared book —
+    // it removes the file for everyone — so it stays restricted to the user
+    // who uploaded it, unlike viewing and editing.
+    if (book.ownerId !== user.id) {
+      throw new ForbiddenError("Only the user who uploaded this book can delete it");
+    }
 
     db.delete(books).where(eq(books.id, id)).run();
     deleteBookFiles(book.filePath, book.coverPath);

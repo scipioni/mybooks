@@ -2,19 +2,23 @@
 
 ## Purpose
 
-Gives each registered user a private EPUB catalog they can build by uploading files, then organize and find again using Calibre-like metadata: series, tags, reading status, ratings, and search.
+Gives the instance's registered users a single shared EPUB catalog they build by uploading files, then organize and find again using Calibre-like metadata: series, tags, reading status, ratings, and search.
 
 ## Requirements
 
-### Requirement: Book libraries are private per user
-The system SHALL scope every book to the user who imported it. A user SHALL only be able to view, edit, or delete books they own.
+### Requirement: The book library is shared across all registered users
+The system SHALL maintain one library shared by every registered user of the instance. Any signed-in user SHALL be able to view, edit, and send any book, regardless of who uploaded it. The system SHALL record the uploading user as each book's owner; that ownership SHALL NOT restrict viewing, editing, or sending, and SHALL restrict only deletion. Access SHALL remain closed to users who are not signed in, per the auth capability's registration rules.
 
-#### Scenario: User views their library
+#### Scenario: User views the library
 - **WHEN** a signed-in user opens their library
-- **THEN** the system shows only books owned by that user
+- **THEN** the system shows every book in the instance, including books uploaded by other users
 
-#### Scenario: User attempts to access another user's book
-- **WHEN** a signed-in user requests a book owned by a different user
+#### Scenario: User opens a book uploaded by someone else
+- **WHEN** a signed-in user requests a book uploaded by a different user
+- **THEN** the system grants access on the same terms as a book they uploaded themselves
+
+#### Scenario: Signed-out visitor requests a book
+- **WHEN** a request for a book is made without a valid session
 - **THEN** the system denies access
 
 ### Requirement: Users import books by uploading EPUB files
@@ -40,10 +44,10 @@ The system SHALL extract available metadata (at minimum title and author) from t
 - **THEN** the system creates the book record with that field left blank rather than failing the upload
 
 ### Requirement: Users can edit book metadata and organization fields
-The system SHALL let a user edit their own book's title, author, series (name and position), tags, reading status, and rating.
+The system SHALL let a user edit any book's title, author, series (name and position), tags, reading status, and rating.
 
 #### Scenario: User edits a book's series and tags
-- **WHEN** a user sets a series name/position and adds tags to a book they own
+- **WHEN** a user sets a series name/position and adds tags to a book in the shared library
 - **THEN** the system saves those values against that book
 
 #### Scenario: User sets reading status
@@ -52,16 +56,16 @@ The system SHALL support at least the reading statuses: want-to-read, reading, a
 - **WHEN** a user changes a book's reading status
 - **THEN** the system saves the new status and it is reflected when the book is viewed again
 
-### Requirement: Users can search, filter, and sort their library
-The system SHALL let a user search their own books by title, author, or series, filter by tag and/or reading status, and sort the results (at minimum by title, author, and date added).
+### Requirement: Users can search, filter, and sort the library
+The system SHALL let a user search the shared library by title, author, or series, filter by tag and/or reading status, and sort the results (at minimum by title, author, and date added).
 
 #### Scenario: User searches by title
 - **WHEN** a user enters a search term matching part of a book's title
-- **THEN** the system returns only that user's books whose title contains the term
+- **THEN** the system returns only the books whose title contains the term
 
 #### Scenario: User filters by tag and reading status together
 - **WHEN** a user applies both a tag filter and a reading-status filter
-- **THEN** the system returns only that user's books matching both filters
+- **THEN** the system returns only the books matching both filters
 
 ### Requirement: A book has a cover image
 The system SHALL display a cover image for each book, using a cover extracted from the EPUB when available, falling back to a placeholder when no cover art is present.
@@ -74,12 +78,16 @@ The system SHALL display a cover image for each book, using a cover extracted fr
 - **WHEN** an uploaded EPUB contains no embedded cover image
 - **THEN** the system shows a placeholder cover until one is supplied (e.g. via the Open Library metadata capability)
 
-### Requirement: Users can delete their own books
-The system SHALL let a user permanently delete a book they own, removing both its record and its stored file.
+### Requirement: Only the uploading user can delete a book
+The system SHALL let a user permanently delete a book they uploaded, removing both its record and its stored file. The system SHALL reject an attempt to delete a book uploaded by a different user, and SHALL NOT offer the delete action for such a book in the UI.
 
-#### Scenario: User deletes a book
-- **WHEN** a user deletes a book they own
-- **THEN** the system removes the book record and its associated file so it no longer appears in their library
+#### Scenario: Uploader deletes their book
+- **WHEN** a user deletes a book they uploaded
+- **THEN** the system removes the book record and its associated file so it no longer appears in the library for any user
+
+#### Scenario: Non-uploader attempts to delete a book
+- **WHEN** a user attempts to delete a book uploaded by a different user
+- **THEN** the system rejects the request and leaves the book and its file intact
 
 ### Requirement: Users can upload multiple EPUB files at once via drag-and-drop
 The system SHALL let a user select or drag-and-drop multiple EPUB files in a single action, queue them, and upload each independently, reporting per-file success or failure without one failing file blocking the others.
@@ -104,7 +112,7 @@ The system SHALL store and let a user edit a book's language, ISBN, and publicat
 - **THEN** the system leaves the book's ISBN blank rather than storing the non-ISBN value
 
 #### Scenario: User edits language, ISBN, or publication year
-- **WHEN** a user edits their own book's language, ISBN, or publication year field
+- **WHEN** a user edits a book's language, ISBN, or publication year field
 - **THEN** the system saves the updated value
 
 ### Requirement: Dashboard flags books with incomplete metadata

@@ -4,7 +4,8 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { books, type Book } from "@/lib/db/schema";
-import { ForbiddenError, NotFoundError, handleAuthError, requireUser } from "@/lib/authz";
+import { handleAuthError, requireUser } from "@/lib/authz";
+import { getBookOrThrow } from "@/lib/books";
 import { fetchOpenLibraryDetails } from "@/lib/openlibrary";
 import { fetchGoogleBooksDetails } from "@/lib/googlebooks";
 import { resolveStoragePath, saveCoverFile } from "@/lib/storage";
@@ -14,11 +15,9 @@ const applySchema = z.object({ key: z.string().min(1), skipCover: z.boolean().op
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    await requireUser();
     const { id } = await params;
-    const book = db.select().from(books).where(eq(books.id, id)).get();
-    if (!book) throw new NotFoundError("Book not found");
-    if (book.ownerId !== user.id) throw new ForbiddenError("You do not own this book");
+    const book = getBookOrThrow(id);
 
     const body = await req.json().catch(() => null);
     const parsed = applySchema.safeParse(body);
@@ -41,7 +40,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (details.isbn) update.isbn = details.isbn;
     if (details.publicationYear) update.publicationYear = details.publicationYear;
     if (!parsed.data.skipCover && details.coverBuffer && details.coverExt) {
-      update.coverPath = saveCoverFile(user.id, id, details.coverBuffer, details.coverExt);
+      // Keyed on the book's owner, not the editing user, so a shared book's
+      // files stay together under the directory of whoever uploaded it.
+      update.coverPath = saveCoverFile(book.ownerId, id, details.coverBuffer, details.coverExt);
 
       // Best-effort: also embed the new cover into the EPUB file itself, not
       // just the app's separate cover display. A malformed/unusual EPUB

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { and, asc, desc, eq, gte, like, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, like, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { books } from "@/lib/db/schema";
 import { handleAuthError, requireUser } from "@/lib/authz";
@@ -10,7 +10,7 @@ import { resolveGoogleBooksLinkByIsbn } from "@/lib/googlebooks";
 
 export async function GET(req: Request) {
   try {
-    const user = await requireUser();
+    await requireUser();
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim();
     const tag = searchParams.get("tag")?.trim();
@@ -19,7 +19,8 @@ export async function GET(req: Request) {
     const sort = searchParams.get("sort") ?? "createdAt";
     const orderDir = searchParams.get("order") === "asc" ? asc : desc;
 
-    const conditions = [eq(books.ownerId, user.id)];
+    // Shared library: every signed-in user sees every book, whoever uploaded it.
+    const conditions: SQL[] = [];
     if (q) {
       conditions.push(
         or(

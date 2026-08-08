@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { books, devices } from "@/lib/db/schema";
+import { devices } from "@/lib/db/schema";
 import { ForbiddenError, NotFoundError, handleAuthError, requireUser } from "@/lib/authz";
+import { getBookOrThrow } from "@/lib/books";
 import { sendBookToDevice } from "@/lib/mailer";
 import { resolveStoragePath } from "@/lib/storage";
 
@@ -13,9 +14,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     const user = await requireUser();
     const { id } = await params;
-    const book = db.select().from(books).where(eq(books.id, id)).get();
-    if (!book) throw new NotFoundError("Book not found");
-    if (book.ownerId !== user.id) throw new ForbiddenError("You do not own this book");
+    const book = getBookOrThrow(id);
 
     const body = await req.json().catch(() => null);
     const parsed = sendSchema.safeParse(body);

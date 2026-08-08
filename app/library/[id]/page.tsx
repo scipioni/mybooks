@@ -18,7 +18,7 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
 
   const { id } = await params;
   const book = db.select().from(books).where(eq(books.id, id)).get();
-  if (!book || book.ownerId !== session.user.id) {
+  if (!book) {
     notFound();
   }
 
@@ -77,9 +77,11 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
               </span>
             )}
           </div>
-          <div className="mt-4">
-            <DeleteBookButton bookId={book.id} />
-          </div>
+          {book.ownerId === session.user.id && (
+            <div className="mt-4">
+              <DeleteBookButton bookId={book.id} />
+            </div>
+          )}
         </div>
       </div>
 

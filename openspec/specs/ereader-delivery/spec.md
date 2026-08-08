@@ -22,10 +22,10 @@ The system SHALL let a signed-in user add, edit, and remove their own e-reader d
 - **THEN** the system lets them choose which device to send a book to
 
 ### Requirement: Users can send an owned book to one of their devices
-The system SHALL let a user send a book they own to one of their own registered devices by emailing the EPUB file as an attachment to that device's delivery address.
+The system SHALL let a user send any book in the shared library to one of their own registered devices by emailing the EPUB file as an attachment to that device's delivery address.
 
 #### Scenario: User sends a book to a device
-- **WHEN** a user selects a book they own and a device they own and requests delivery
+- **WHEN** a user selects a book and a device they own and requests delivery
 - **THEN** the system emails the book's EPUB file as an attachment to that device's delivery address
 
 #### Scenario: User attempts to send a book they do not own

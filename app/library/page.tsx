@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { and, asc, desc, eq, gte, like, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, like, or, type SQL } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { books } from "@/lib/db/schema";
@@ -30,7 +30,8 @@ export default async function LibraryPage({ searchParams }: Props) {
   const sort = typeof sp.sort === "string" ? sp.sort : "createdAt";
   const orderDir = sp.order === "asc" ? asc : desc;
 
-  const conditions = [eq(books.ownerId, session.user.id)];
+  // Shared library: every signed-in user sees every book, whoever uploaded it.
+  const conditions: SQL[] = [];
   if (q) {
     conditions.push(
       or(
