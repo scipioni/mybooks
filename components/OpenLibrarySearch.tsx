@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { OpenLibraryCandidate } from "@/lib/openlibrary";
+import CandidateCover from "@/components/CandidateCover";
 
 export default function OpenLibrarySearch({
   bookId,
@@ -177,13 +178,8 @@ export default function OpenLibrarySearch({
         <ul className="space-y-2">
           {candidates.map((c) => (
             <li key={c.key} className="flex items-center gap-3 rounded-md border border-zinc-100 p-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={c.coverUrl ?? "/placeholder-cover.svg"}
-                alt={c.title}
-                className="h-16 w-11 flex-none rounded-sm object-cover"
-              />
-              <div className="flex-1 text-sm">
+              <CandidateCover url={c.coverUrl} />
+              <div className="min-w-0 flex-1 text-sm">
                 <p className="font-medium">
                   {c.title}
                   {c.source === "google" && (
