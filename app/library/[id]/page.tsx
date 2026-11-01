@@ -77,11 +77,16 @@ export default async function BookDetailPage({ params }: { params: Promise<{ id:
               </span>
             )}
           </div>
-          {book.ownerId === session.user.id && (
-            <div className="mt-4">
-              <DeleteBookButton bookId={book.id} />
-            </div>
-          )}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <a
+              href={`/api/books/${book.id}/download`}
+              download
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+            >
+              Download EPUB
+            </a>
+            {book.ownerId === session.user.id && <DeleteBookButton bookId={book.id} />}
+          </div>
         </div>
       </div>
 
